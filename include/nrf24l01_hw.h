@@ -44,7 +44,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "../../NRF_Lib/include/nrf24l01_defs.h"
+#include "nrf24l01_defs.h"
 
 /******************************************************************************
 * Preprocessor Constants
@@ -84,7 +84,7 @@ extern "C"{
 //@{
 /* Setup function prototypes */
 
-int nrf_hw_init( nrf_operation_mode_t operational_mode );
+int nrf_hw_init( nrf_radio_mode_t mode, nrf_operation_mode_t operational_mode );
 
 /**
  * @brief Enable or disable interrupt for radio.

@@ -40,8 +40,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "../../NRF_Lib/include/nrf24l01_defs.h"
-#include "../../NRF_Lib/include/nrf24l01_hw.h"
+#include "nrf_defs.h"
+#include "nrf_hw.h"
 
 /******************************************************************************
 * Preprocessor Constants
@@ -84,14 +84,13 @@
 /******************************************************************************
 * Typedefs
 *******************************************************************************/
-typedef enum {
-    RF_IDLE,
-    RF_MAX_RT,
-    RF_TX_DS,
-    RF_RX_DR,
-    RF_TX_AP,
-    RF_BUSY
-} nrf24l01_status_t;
+
+typedef struct
+{
+	nrf_radio_mode_t mode;
+	nrf_operation_mode_t primary;
+	nrf_addr_map_t addresses;
+} nrf_radio_t;
 
 /******************************************************************************
 * Variables
@@ -105,29 +104,8 @@ typedef enum {
 extern "C"{
 #endif
 
-/**
- * @brief Enables radio in shock burst mode with default settings
- *
- * @param address - address of primary Pipe 0
- * @param operational_mode - Enables either PRX or PTX modes
- */
-int nrf_sb_init( nrf_addr_map_t *address, nrf_operation_mode_t operational_mode );
 
-/**
- * @brief nrf_esb_init
- *
- * @param address
- * @param operational_mode
- */
-int nrf_esb_init( nrf_addr_map_t *address, nrf_operation_mode_t operational_mode );
-
-/**
- * @brief nrf_pl_init
- *
- * @param address
- * @param operational_mode
- */
-int nrf_esb_bidirection_init( nrf_addr_map_t *address, nrf_operation_mode_t operational_mode );
+nrf_status_t nrf24l01_init( nrf_radio_t radio );
 
 /**
  * @brief nrf_send_data
@@ -137,7 +115,7 @@ int nrf_esb_bidirection_init( nrf_addr_map_t *address, nrf_operation_mode_t oper
  * @param count
  * @return
  */
-uint8_t nrf_send_data( uint8_t *address, uint8_t *data_out , uint8_t count);
+uint8_t nrf_send_payload( uint8_t *address, uint8_t *data_out , uint8_t count);
 
 /**
  * @brief nrf_recieve_data
@@ -147,7 +125,7 @@ uint8_t nrf_send_data( uint8_t *address, uint8_t *data_out , uint8_t count);
  * @param count
  * @return
  */
-uint8_t nrf_recieve_data( nrf_address_t *address, uint8_t *data_in );
+uint8_t nrf_recieve_payload( nrf_address_t *address, uint8_t *data_in );
 
 /**
  *
