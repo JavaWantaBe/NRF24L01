@@ -49,7 +49,8 @@
 #define NRF24L01_CE_PIN					NRF_CE_Pin
 #define NRF24L01_CE_PORT				NRF_CE_GPIO_Port
 
-#define NRF_SPI_TIMEOUT 100000
+#define NRF_SPI_TIMEOUT 100
+#define NRF_MAX_PACKET_SIZE 32
 
 /******************************************************************************
 * Configuration Constants
@@ -90,7 +91,6 @@
 #define NRF_CMD_FLUSH_TX 0xE1
 #define NRF_CMD_FLUSH_RX 0xE2
 #define NRF_CMD_REUSE_TX_PL 0xE3
-#define NRF_CMD_ACTIVATE 0x50
 #define NRF_CMD_R_RX_PL_WID 0x60
 #define NRF_CMD_W_ACK_PAYLOAD 0xA8
 #define NRF_CMD_W_TX_PAYLOAD_NOACK 0xB0
@@ -114,8 +114,8 @@
  */
 typedef enum
 {
-    NRF_OK,  //!< NRF_OK
-    NRF_ERROR//!< NRF_ERROR
+    NRF_OK,         //!< NRF_OK
+    NRF_ERROR       //!< NRF_ERROR
 } NRF_RESULT_t;
 
 /******************************************************************************
