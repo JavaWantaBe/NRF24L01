@@ -1,352 +1,493 @@
-/****************************************************************************
-* Title                 :   ADC Application
-* Filename              :   adc_app.h
-* Author                :   JWB
-* Origin Date           :   06/07/2012
-* Notes                 :   None
-*****************************************************************************/
-/**************************CHANGE LIST **************************************
-*
-*    Date    Software Version    Initials   Description
-*  08/17/13    XXXXXXXXXXX         JWB      Interface Created.
-*
-*****************************************************************************/
-/** @file file_here.h
- *  @brief What is does
- *
- *  @date 25 Aug 2015
- *  @author Richard Lowe
- *  @copyright GNU Public License
- *
- *  @version .1 - Initial testing and verification
- *
- *  @note Test configuration:
- *   MCU:             STM32F107VC
- *   Dev.Board:       EasyMx Pro v7
- *   Oscillator:      72 Mhz internal
- *   Ext. Modules:    GPS Click
- *   SW:              ARM 4.5.2
- *
- */
+#ifndef _NRF24L01_REGISTER_H_
+#define _NRF24L01_REGISTER_H_
 
-#ifndef NRF_DEFS_H_
-#define NRF_DEFS_H_
-
-/******************************************************************************
-* Includes
-*******************************************************************************/
-
-
-/******************************************************************************
-* Preprocessor Constants
-*******************************************************************************/
-/** @name - Instruction Set - */
-#define NRF_WRITE_REG 0x20  /**< Register write command */
-#define RD_RX_PLOAD_W 0x60  /**< Read RX payload command */
-#define RD_RX_PLOAD   0x61  /**< Read RX payload command */
-#define WR_TX_PLOAD   0xA0  /**< Write TX payload command */
-#define WR_ACK_PLOAD  0xA8  /**< Write ACK payload command */
-#define WR_NAC_TX_PLOAD 0xB0  /**< Write ACK payload command */
-#define FLUSH_TX      0xE1  /**< Flush TX register command */
-#define FLUSH_RX      0xE2  /**< Flush RX register command */
-#define REUSE_TX_PL   0xE3  /**< Reuse TX payload command */
-//#define LOCK_UNLOCK   0x50  /**< Lock/unlock exclusive features */
-
-#define NOP           0xFF  /**< No Operation command, used for reading status register */
-
-/** Register Memory Map - */
-#define CONFIG        0x00  /**< nRF24L01 config register */
-#define EN_AA         0x01  /**< nRF24L01 enable Auto-Acknowledge register */
-#define EN_RXADDR     0x02  /**< nRF24L01 enable RX addresses register */
-#define SETUP_AW      0x03  /**< nRF24L01 setup of address width register */
-#define SETUP_RETR    0x04  /**< nRF24L01 setup of automatic retransmission register */
-#define RF_CH         0x05  /**< nRF24L01 RF channel register */
-#define RF_SETUP      0x06  /**< nRF24L01 RF setup register */
-#define STATUS        0x07  /**< nRF24L01 status register */
-#define OBSERVE_TX    0x08  /**< nRF24L01 transmit observe register */
-#define CD            0x09  /**< nRF24L01 carrier detect register */
-#define RX_ADDR_P0    0x0A  /**< nRF24L01 receive address data pipe0 */
-#define RX_ADDR_P1    0x0B  /**< nRF24L01 receive address data pipe1 */
-#define RX_ADDR_P2    0x0C  /**< nRF24L01 receive address data pipe2 */
-#define RX_ADDR_P3    0x0D  /**< nRF24L01 receive address data pipe3 */
-#define RX_ADDR_P4    0x0E  /**< nRF24L01 receive address data pipe4 */
-#define RX_ADDR_P5    0x0F  /**< nRF24L01 receive address data pipe5 */
-#define TX_ADDR       0x10  /**< nRF24L01 transmit address */
-#define RX_PW_P0      0x11  /**< nRF24L01 \# of bytes in rx payload for pipe0 */
-#define RX_PW_P1      0x12  /**< nRF24L01 \# of bytes in rx payload for pipe1 */
-#define RX_PW_P2      0x13  /**< nRF24L01 \# of bytes in rx payload for pipe2 */
-#define RX_PW_P3      0x14  /**< nRF24L01 \# of bytes in rx payload for pipe3 */
-#define RX_PW_P4      0x15  /**< nRF24L01 \# of bytes in rx payload for pipe4 */
-#define RX_PW_P5      0x16  /**< nRF24L01 \# of bytes in rx payload for pipe5 */
-#define FIFO_STATUS   0x17  /**< nRF24L01 FIFO status register */
-#define DYNPD         0x1C  /**< nRF24L01 Dynamic payload setup */
-#define FEATURE       0x1D  /**< nRF24L01 Exclusive feature setup */
-
-#define MASK_RX_DR    6     /**< CONFIG register bit 6 */
-#define MASK_TX_DS    5     /**< CONFIG register bit 5 */
-#define MASK_MAX_RT   4     /**< CONFIG register bit 4 */
-#define EN_CRC        3     /**< CONFIG register bit 3 */
-#define CRCO          2     /**< CONFIG register bit 2 */
-#define PWR_UP        1     /**< CONFIG register bit 1 */
-#define PRIM_RX       0     /**< CONFIG register bit 0 */
-
-/** @name RF_SETUP register bit definitions */
-//@{
-#define PLL_LOCK      4     /**< RF_SETUP register bit 4 */
-#define RF_DR         3     /**< RF_SETUP register bit 3 */
-#define RF_PWR1       2     /**< RF_SETUP register bit 2 */
-#define RF_PWR0       1     /**< RF_SETUP register bit 1 */
-#define LNA_HCURR     0     /**< RF_SETUP register bit 0 */
-//@}
-
-/* STATUS 0x07 */
-/** @name STATUS register bit definitions */
-//@{
-#define RX_DR         6     /**< STATUS register bit 6 */
-#define TX_DS         5     /**< STATUS register bit 5 */
-#define MAX_RT        4     /**< STATUS register bit 4 */
-#define TX_FULL       0     /**< STATUS register bit 0 */
-//@}
-
-/* FIFO_STATUS 0x17 */
-/** @name FIFO_STATUS register bit definitions */
-//@{
-#define TX_REUSE      6     /**< FIFO_STATUS register bit 6 */
-#define TX_FIFO_FULL  5     /**< FIFO_STATUS register bit 5 */
-#define TX_EMPTY      4     /**< FIFO_STATUS register bit 4 */
-#define RX_FULL       1     /**< FIFO_STATUS register bit 1 */
-#define RX_EMPTY      0     /**< FIFO_STATUS register bit 0 */
-//@}
-
-#define NRF_BIT_0 0x01 /**< The value of bit 0 */
-#define NRF_BIT_1 0x02 /**< The value of bit 1 */
-#define NRF_BIT_2 0x04 /**< The value of bit 2 */
-#define NRF_BIT_3 0x08 /**< The value of bit 3 */
-#define NRF_BIT_4 0x10 /**< The value of bit 4 */
-#define NRF_BIT_5 0x20 /**< The value of bit 5 */
-#define NRF_BIT_6 0x40 /**< The value of bit 6 */
-#define NRF_BIT_7 0x80 /**< The value of bit 7 */
-
-
-/******************************************************************************
-* Configuration Constants
-*******************************************************************************/
-
-
-/******************************************************************************
-* Macros
-*******************************************************************************/
-/** Swaps the upper byte with the lower byte in a 16 bit variable */
-#define NRF_SWAP(x) ((((x)&0xFF)<<8)|(((x)>>8)&0xFF))
-
-#define NRF_SET_BIT(pos) ((uint8_t) (1<<( (uint8_t) (pos) )))
-
-/** The upper 8 bits of a 16 bit value */
-#define NRF_MSB(a) ((a & 0xFF00) >> 8)
-/** The lower 8 bits (of a 16 bit value) */
-#define NRF_LSB(a) ((a & 0xFF))
-
-/** Leaves the minimum of the two arguments */
-#define NRF_MIN(a, b) ((a) < (b) ? (a) : (b))
-/** Leaves the maximum of the two arguments */
-#define NRF_MAX(a, b) ((a) < (b) ? (b) : (a))
-
-#define NRF_FLUSH_TX() nrf_command(FLUSH_TX)
-#define NRF_FLUSH_RX() nrf_command(FLUSH_RX)
-#define NRF_RESUSE_PL() nrf_command(REUSE_TX_PL)
-#define NRF_NOP() nrf_command(NOP)
-
-
-/******************************************************************************
-* Typedefs
-*******************************************************************************/
-typedef enum
-{
-    NRF_POWER_DOWN,
-    NRF_STANDBY_I,
-	NRF_STANDBY_II,
-    NRF_TX_MODE,
-    NRF_RX_MODE,
-	NRF_ERROR
-} nrf_status_t;
-
-typedef enum
-{
-	NRF_SHOCK_BURST,
-	NRF_ENHANCED,
-	NRF_ENHANCED_BIDIR
-} nrf_radio_mode_t;
-
-
-/**
- * @brief An enum describing the radio's irq sources.
- *
- */
-typedef enum
-{
-    NRF_MAX_RT = 4,     /**< Max retries interrupt */
-    NRF_TX_DS,          /**< TX data sent interrupt */
-    NRF_RX_DR           /**< RX data received interrupt */
-} nrf_irq_source_t;
-
-/* Operation mode definitions */
-
-/**
- * @brief An enum describing the radio's power mode.
- *
- */
-typedef enum
-{
-    NRF_PTX,            /**< Primary TX operation */
-    NRF_PRX             /**< Primary RX operation */
-} nrf_operation_mode_t;
-
-
-/**
- * @brief An enum describing the radio's output power mode's.
- *
- */
-typedef enum
-{
-    NRF_18DBM = 0,          /**< Output power set to -18dBm */
-    NRF_12DBM = 1,          /**< Output power set to -12dBm */
-    NRF_6DBM  = 2,          /**< Output power set to -6dBm  */
-    NRF_0DBM  = 4           /**< Output power set to 0dBm   */
-} nrf_output_power_t;
-
-/**
- * @brief An enum describing the radio's on-air datarate.
- *
- */
-typedef enum
-{
-    NRF_1MBPS = 0,          /**< Datarate set to 1 Mbps  */
-    NRF_2MBPS = 1,           /**< Datarate set to 2 Mbps  */
-	NRF_250k  = 2
-} nrf_datarate_t;
-
-/**
- * @brief An enum describing the radio's PLL mode.
- *
- */
-typedef enum
-{
-    NRF_PLL_UNLOCK,     /**< PLL unlocked, normal operation  */
-    NRF_PLL_LOCK        /**< PLL locked, test mode  */
-} nrf_pll_mode_t;
-
-/**
- * @brief An enum describing the radio's LNA mode.
- *
- */
-typedef enum
-{
-    NRF_LNA_LCURR,      /**< LNA set to low current mode */
-    NRF_LNA_HCURR       /**< LNA set to high current mode */
-} nrf_lna_mode_t;
-
-/**
- * @brief An enum describing the radio's CRC mode.
- *
- */
-typedef enum
-{
-    NRF_CRC_8BIT = 0,   /**< CRC check set to 8-bit */
-    NRF_CRC_16BIT = 1       /**< CRC check set to 16-bit */
-} nrf_crc_mode_t;
-
-/**
- * @brief An enum describing the read/write payload command.
- *
- */
-typedef enum
-{
-    NRF_TX_PLOAD = 7,   /**< TX payload definition */
-    NRF_RX_PLOAD,       /**< RX payload definition */
-    NRF_ACK_PLOAD
-} nrf_pload_command_t;
-
-/**
- * @brief Structure containing the radio's address map.
- * Pipe0 contains 5 unique address bytes,
- * while pipe[1..5] share the 4 MSB bytes, set in pipe1.
- * <p><b> - Remember that the LSB byte for all pipes have to be unique! -</b>
- */
-// nRF24L01 Address struct
-typedef struct
-{
-    uint8_t p0[5];     /**< Pipe0 address, 5 bytes */
-    uint8_t p1[5];     /**< Pipe1 address, 5 bytes, 4 MSB bytes shared for pipe1 to pipe5 */
-    uint8_t p2[1];     /**< Pipe2 address, 1 byte */
-    uint8_t p3[1];     /**< Pipe3 address, 1 byte */
-    uint8_t p4[1];     /**< Pipe3 address, 1 byte */
-    uint8_t p5[1];     /**< Pipe3 address, 1 byte */
-    uint8_t tx[5];     /**< TX address, 5 byte */
-} nrf_addr_map_t;
-
-
-/**
- * @brief An enum describing the nRF24L01 pipe addresses and TX address.
- *
- */
-typedef enum
-{
-    NRF_PIPE0,              /**< Select pipe0 */
-    NRF_PIPE1,              /**< Select pipe1 */
-    NRF_PIPE2,              /**< Select pipe2 */
-    NRF_PIPE3,              /**< Select pipe3 */
-    NRF_PIPE4,              /**< Select pipe4 */
-    NRF_PIPE5,              /**< Select pipe5 */
-    NRF_TX,                 /**< Refer to TX address*/
-    NRF_ALL = 0xFF          /**< Close or open all pipes*/
-                  /**< @see nrf_set_address @see nrf_get_address
-                   @see nrf_open_pipe  @see nrf_close_pipe */
-} nrf_address_t;
-
-/**
- * @brief An enum describing the radio's address width.
- *
- */
-typedef enum
-{
-    NRF_AW_3BYTES = 3,      /**< Set address width to 3 bytes */
-    NRF_AW_4BYTES,          /**< Set address width to 4 bytes */
-    NRF_AW_5BYTES           /**< Set address width to 5 bytes */
-} nrf_address_width_t;
-
-/**
- * @brief Enumerates the different states the radio may
- * be in.
- */
-typedef enum
-{
-  NRF_STANDBY,             /**< Radio is idle */
-  NRF_POWERDOWN,
-  NRF_MAX_RETRIES,      /**< Maximum number of retries have occured */
-  NRF_TX_DATA_SENT,     /**< Data is sent */
-  NRF_RX_DATA_RECEIVED, /**< Data recieved */
-  NRF_TX_ACK_PAYLOAD,   /**< Ack payload recieved */
-  NRF_BUSY              /**< Radio is busy */
-} nrf_state_t;
-
-
-/******************************************************************************
-* Variables
-*******************************************************************************/
-
-
-/******************************************************************************
-* Function Prototypes
-*******************************************************************************/
-#ifdef __cplusplus
-extern "C"{
+#ifndef REG_U8
+#define REG_U8 unsigned char
 #endif
+/*** nRF24L01 SPI command ***/
+#define R_REGISTER(x)   (x&0x1F)        /*Read command and status registers. AAAAA =
+                                        5 bit Register Map Address*/
+
+#define W_REGISTER(x)   ((x&0x1F)|0x20) /*Write command and status registers. (x) = 5
+                                        bit Register Map Address
+                                        Executable in power down or standby modes
+                                        only.*/
+
+#define R_RX_PAYLOAD    (0x61)          /*Read RX-payload: 1-32 bytes. A read operation
+                                        always starts at byte 0. Payload is deleted from
+                                        FIFO after it is read. Used in RX mode.*/
+
+#define W_TX_PAYLOAD    (0xA0)          /*Write TX-payload: 1-32 bytes. A write operation
+                                        always starts at byte 0 used in TX payload.*/
+#define FLUSH_TX        (0xE1)          /*Flush TX FIFO, used in TX mode*/
+
+#define FLUSH_RX        (0xE2)          /*Flush RX FIFO, used in RX mode
+                                        Should not be executed during transmission of
+                                        acknowledge, that is, acknowledge package will
+                                        not be completed.*/
+
+#define REUSE_TX_PL     (0xE3)          /*Used for a PTX device
+                                        Reuse last transmitted payload.
+                                        TX payload reuse is active until
+                                        W_TX_PAYLOAD or FLUSH TX is executed. TX
+                                        payload reuse must not be activated or deactivated during package transmission.*/
+
+#define R_RX_PL_WID     (0x60)          /*Read RX payload width for the top
+                                        R_RX_PAYLOAD in the RX FIFO.
+                                        Note: Flush RX FIFO if the read value is larger
+                                        than 32 bytes.*/
+
+#define W_ACK_PAYLOAD(x) (0xA8|(x&0x07))        /*Used in RX mode.
+                                                Write Payload to be transmitted together with
+                                                ACK packet on PIPE (x). ((x) valid in the
+                                                range from 000 to 101). Maximum three ACK
+                                                packet payloads can be pending. Payloads with
+                                                same (x) are handled using first in - first out
+                                                principle. Write payload: 1-32 bytes. A write
+                                                operation always starts at byte 0.*/
+
+#define W_TX_PAYLOAD_NO (0xB0)          /*Used in TX mode. Disables AUTOACK on this
+                                        specific packet.*/
+
+#define NOP             (0xFF)          /*No Operation. Might be used to read the STATUS
+                                        register*/
+
+/*** Registor structure Define ***/
+/**** CONFIG            00H = 0x08
+    Configuration Register
+    */
+struct nRF24L01_CONFIG{
+    REG_U8 PRIM_RX:1;   //RX/TX control
+                        //1: PRX, 0: PTX
+
+    REG_U8 PWR_UP:1;    //1: POWER UP, 0:POWER DOWN
+
+    REG_U8 CRCO:1;      //CRC encoding scheme
+                        //'0' - 1 byte
+                        //'1' - 2 bytes
+    REG_U8 EN_CRC:1;    //Enable CRC. Forced high if one of the bits
+                        //in the EN_AA is high
+
+    REG_U8 MASK_MAX_RT:1;       //Mask interrupt caused by MAX_RT
+                                //1: Interrupt not reflected on the IRQ pin
+                                //0: Reflect MAX_RT as active low interrupt on theIRQ pin
+
+    REG_U8 MASK_TX_DS:1;        //Mask interrupt caused by TX_DS
+                                //1: Interrupt not reflected on the IRQ pin
+                                //0: Reflect TX_DS as active low interrupt on the IRQpin
+
+    REG_U8 MASK_RX_DR:1;        //Mask interrupt caused by RX_DR
+                                //1: Interrupt not reflected on the IRQ pin
+                                //0: Reflect RX_DR as active low interrupt on theIRQ pin
+
+    REG_U8 Reserved:1;  //Only '0' allowed
+};
+/**** EN_AA			01H = 0x3F
+    Enable Auto Acknowledgment Function Disable
+    this functionality to be compatible with nRF2401
+    */
+struct nRF24L01_EN_AA{
+    REG_U8 ENAA_P0:1;   //Enable auto acknowledgement data pipe 0
+
+    REG_U8 ENAA_P1:1;   //Enable auto acknowledgement data pipe 1
+
+    REG_U8 ENAA_P2:1;   //Enable auto acknowledgement data pipe 2
+
+    REG_U8 ENAA_P3:1;   //Enable auto acknowledgement data pipe 3
+
+    REG_U8 ENAA_P4:1;   //Enable auto acknowledgement data pipe 4
+
+    REG_U8 ENAA_P5:1;   //Enable auto acknowledgement data pipe 5
+
+    REG_U8 Reserved:2;  //Only '00' allowed
+};
+
+/**** EN_RXADDR		02H = 0x03
+    Enabled RX Addresses
+    */
+struct nRF24L01_EN_RXADDR{
+    REG_U8 ERX_P0:1;    //Enable data pipe 0.
+
+    REG_U8 ERX_P1:1;    //Enable data pipe 1.
+
+    REG_U8 ERX_P2:1;    //Enable data pipe 2.
+
+    REG_U8 ERX_P3:1;    //Enable data pipe 3.
+
+    REG_U8 ERX_P4:1;    //Enable data pipe 4.
+
+    REG_U8 ERX_P5:1;    //Enable data pipe 5.
+
+    REG_U8 Reserved:2;  //Only '00' allowed
+};
+
+/**** SETUP_AW		03H = 0x03
+    Setup of Address Widths (common for all data pipes)
+    */
+struct nRF24L01_SETUP_AW{
+    REG_U8 AW:2;        //RX/TX Address field width
+                        //'00' - Illegal
+                        //'01' - 3 bytes
+                        //'10' - 4 bytes
+                        //'11' - 5 bytes
+                        //LSByte is used if address width is below 5 bytes
+
+    REG_U8 Reserved:6;  //Only '000000' allowed
+};
+
+/**** SETUP_RETR	04H = 0x03
+    Setup of Automatic Retransmission
+    */
+struct nRF24L01_SETUP_RETR{
+    REG_U8 ARC:4;       //Auto Retransmit Count
+                        //'0000' -Re-Transmit disabled
+                        //'0001' - Up to 1 Re-Transmit on fail of AA
+                        //....
+                        //'1111' - Up to 15 Re-Transmit on fail of AA
+
+    REG_U8 ARD:4;       //Auto Retransmit Delay
+                        //'0000' - Wait 250us
+                        //'0001' - Wait 500us
+                        //'0010' - Wait 750us
+                        //...
+                        //'1111' - Wait 4000us
+                        //(Delay defined from end of transmission to start ofnext transmission)
+};
+
+/**** RF_CH             05H = 0x02
+    RF Channel
+    */
+struct nRF24L01_RF_CH{
+    REG_U8 RF_CH:7;     //Sets the frequency channel nRF24L01+ operates
+                        //on
+
+    REG_U8 Reserved:1;  //Only '0' allowed
+};
+
+/**** RF_SETUP		06H = 0x0E
+    RF Setup Register
+    */
+struct nRF24L01_RF_SETUP{
+    REG_U8 Obsolete:1;  //Don't care
+
+    REG_U8 RF_PWR:2;    //Set RF output power in TX mode
+                        //'00' - -18dBm
+                        //'01' - -12dBm
+                        //'10' - -6dBm
+                        //'11' - 0dBm
+
+    REG_U8 RF_DR_HIGH:1;        //Select between the high speed data rates. This bit
+                                //is don't care if RF_DR_LOW is set.
+                                //Encoding:
+                                //[RF_DR_LOW, RF_DR_HIGH]:
+                                //'00' - 1Mbps
+                                //'01' - 2Mbps
+                                //'10' - 250kbps
+                                //'11' - Reserved
+
+    REG_U8 PPL_LOCK:1;  //Force PLL lock signal. Only used in test
 
 
+    REG_U8 RF_DR_LOW:1; //Set RF Data Rate to 250kbps. See RF_DR_HIGH
+                        //for encoding.
 
-#ifdef __cplusplus
-} // extern "C"
+    REG_U8 Reserved:1;  //Only '0' allowed
+
+    REG_U8 CONT_WAVE:1; //Enables continuous carrier transmit when high.
+};
+
+/**** STATUS		07H = 0x0E
+    Status Register (In parallel to the SPI command
+    word applied on the MOSI pin, the STATUS register
+    is shifted serially out on the MISO pin)
+    */
+struct nRF24L01_STATUS{
+    REG_U8 TX_FULL:1;   //TX FIFO full flag.
+                        //1: TX FIFO full.
+                        //0: Available locations in TX FIFO.
+
+    REG_U8 RX_P_NO:3;   //Data pipe number for the payload available for
+                        //reading from RX_FIFO
+                        //000-101: Data Pipe Number
+                        //110: Not Used
+                        //111: RX FIFO Empty
+
+    REG_U8 MAX_RT:1;    //Maximum number of TX retransmits interrupt
+                        //Write 1 to clear bit. If MAX_RT is asserted it must
+                        //be cleared to enable further communication.
+
+    REG_U8 TX_DS:1;     //Data Sent TX FIFO interrupt. Asserted when
+                        //packet transmitted on TX. If AUTO_ACK is acti
+                        //vated, this bit is set high only when ACK is
+                        //received.
+                        //Write 1 to clear bit.
+
+    REG_U8 RX_DR:1;     //Data Ready RX FIFO interrupt. Asserted when
+                        //new data arrives RX FIFOc.
+                        //Write 1 to clear bit.
+
+    REG_U8 Reserved:1;  //Only '0' allowed
+};
+
+/**** OBSERVE_TX	08H = 0x00
+    Transmit observe register
+    */
+struct nRF24L01_OBSERVE_TX{
+    REG_U8 ARC_CNT:4;   //Count retransmitted packets. The counter is reset
+                        //when transmission of a new packet starts.
+
+    REG_U8 PLOS_CNT:4;  //Count lost packets. The counter is overflow pro-
+                        //tected to 15, and discontinues at max until reset.
+                        //The counter is reset by writing to RF_CH.
+};
+
+/**** RPD               09H = 0x00
+    NONE
+    */
+struct nRF24L01_RPD{
+    REG_U8 RPD:1;       //Received Power Detector. This register is called
+                        //CD (Carrier Detect) in the nRF24L01. The name is
+                        //different in nRF24L01+ due to the different input
+                        //power level threshold for this bit.
+
+    REG_U8 Reserved:7;
+};
+
+/**** RX_ADDR_P0	0AH = 0xE7E7E7E7E7 (5Bytes)
+    Receive address data pipe 0. 5 Bytes maximum
+    length. (LSByte is written first. Write the number of
+    bytes defined by SETUP_AW)
+    */
+struct nRF24L01_RX_ADDR_P0{
+    REG_U8 addr[5];
+};
+
+/**** RX_ADDR_P1	0BH = 0xC2C2C2C2C2 (5Bytes)
+    Receive address data pipe 1. 5 Bytes maximum
+    length. (LSByte is written first. Write the number of
+    bytes defined by SETUP_AW)
+    */
+struct nRF24L01_RX_ADDR_P1{
+    REG_U8 addr[5];
+};
+
+/**** RX_ADDR_P2	0CH = 0xC3
+    Receive address data pipe 2. Only LSB. MSBytes
+    are equal to RX_ADDR_P1[39:8]
+    */
+struct nRF24L01_RX_ADDR_P2{
+    REG_U8 addr;
+};
+
+/**** RX_ADDR_P3	0DH = 0xC4
+    Receive address data pipe 3. Only LSB. MSBytes
+    are equal to RX_ADDR_P1[39:8]
+    */
+struct nRF24L01_RX_ADDR_P3{
+    REG_U8 addr;
+};
+
+/**** RX_ADDR_P4	0EH = 0xC5
+    Receive address data pipe 4. Only LSB. MSBytes
+    are equal to RX_ADDR_P1[39:8]
+    */
+struct nRF24L01_RX_ADDR_P4{
+    REG_U8 addr;
+};
+
+/**** RX_ADDR_P5	0FH = 0xC6
+    Receive address data pipe 5. Only LSB. MSBytes
+    are equal to RX_ADDR_P1[39:8]
+    */
+struct nRF24L01_RX_ADDR_P5{
+    REG_U8 addr;
+};
+
+/**** TX_ADDR		10H = 0xE7E7E7E7E7 (5Bytes)
+    Transmit address. Used for a PTX device only.
+    (LSByte is written first)
+    Set RX_ADDR_P0 equal to this address to handle
+    automatic acknowledge if this is a PTX device with
+    Enhanced ShockBurst? enabled.
+    */
+struct nRF24L01_TX_ADDR{
+    REG_U8 addr[5];
+};
+
+/**** RX_PW_P0		11H = 0x00
+    */
+struct nRF24L01_RX_PW_P0{
+    REG_U8 RX_PW_P0:6;  //Number of bytes in RX payload in data pipe 0 (1 to
+                        //32 bytes).
+                        //0 Pipe not used
+                        //1 = 1 byte
+                        //...
+                        //32 = 32 bytes
+
+    REG_U8 Reserved:2;  //Only '00' allowed
+};
+
+/**** RX_PW_P1		12H = 0x00
+    */
+struct nRF24L01_RX_PW_P1{
+    REG_U8 RX_PW_P1:6;  //Number of bytes in RX payload in data pipe 1
+                        //32 bytes).
+                        //0 Pipe not used
+                        //1 = 1 byte
+                        //...
+                        //32 = 32 bytes
+
+    REG_U8 Reserved:2;  //Only '00' allowed
+};
+
+/**** RX_PW_P2		13H = 0x00
+    */
+struct nRF24L01_RX_PW_P2{
+    REG_U8 RX_PW_P2:6;  //Number of bytes in RX payload in data pipe 2
+                        //32 bytes).
+                        //0 Pipe not used
+                        //1 = 1 byte
+                        //...
+                        //32 = 32 bytes
+
+    REG_U8 Reserved:2;  //Only '00' allowed
+};
+
+/**** RX_PW_P3		14H = 0x00
+    */
+struct nRF24L01_RX_PW_P3{
+    REG_U8 RX_PW_P3:6;  //Number of bytes in RX payload in data pipe 3
+                        //32 bytes).
+                        //0 Pipe not used
+                        //1 = 1 byte
+                        //...
+                        //32 = 32 bytes
+
+    REG_U8 Reserved:2;  //Only '00' allowed
+};
+
+/**** RX_PW_P4		15H = 0x00
+    */
+struct nRF24L01_RX_PW_P4{
+    REG_U8 RX_PW_P4:6;  //Number of bytes in RX payload in data pipe 4
+                        //32 bytes).
+                        //0 Pipe not used
+                        //1 = 1 byte
+                        //...
+                        //32 = 32 bytes
+
+    REG_U8 Reserved:2;  //Only '00' allowed
+};
+
+/**** RX_PW_P5		16H = 0x00
+    */
+struct nRF24L01_RX_PW_P5{
+    REG_U8 RX_PW_P5:6;  //Number of bytes in RX payload in data pipe 5
+                        //32 bytes).
+                        //0 Pipe not used
+                        //1 = 1 byte
+                        //...
+                        //32 = 32 bytes
+
+    REG_U8 Reserved:2;  //Only '00' allowed
+};
+
+/**** FIFO_STATUS	17H = 0x11
+    FIFO Status Register
+    */
+struct nRF24L01_FIFO_STATUS{
+    REG_U8 RX_EMPTY:1;  //RX FIFO empty flag.
+                        //1: RX FIFO empty.
+                        //0: Data in RX FIFO.
+
+    REG_U8 RX_FULL:1;   //RX FIFO full flag.
+                        //1: RX FIFO full
+                        //0: Available locations in RX FIFO
+
+    REG_U8 Reserved_:2; //Only '00' allowed
+
+    REG_U8 TX_EMPTY:1;  //TX FIFO empty flag.
+                        //1: TX FIFO empty.
+                        //0: Data in TX FIFO.
+
+    REG_U8 TX_FULL:1;   //TX FIFO full flag. 1: TX FIFO full. 0: Available loca
+                        //tions in TX FIFO.
+
+    REG_U8 TX_REUSE:1;  //Used for a PTX device
+                        //Pulse the rfce high for at least 10��s to Reuse last
+                        //transmitted payload. TX payload reuse is active
+                        //until W_TX_PAYLOAD or FLUSH TX is executed.
+                        //TX_REUSE is set by the SPI command
+                        //REUSE_TX_PL, and is reset by the SPI commands
+                        //W_TX_PAYLOAD or FLUSH TX
+
+    REG_U8 Reserved:1;  //Only '0' allowed
+};
+
+/**** DYNPD             1CH = 0x00
+    Enable dynamic payload length
+    */
+struct nRF24L01_DYNPD{
+    REG_U8 DPL_P0:1;    //Enable dynamic payload length data pipe 0.
+                        //(Requires EN_DPL and ENAA_P0)
+
+    REG_U8 DPL_P1:1;    //Enable dynamic payload length data pipe 1.
+                        //(Requires EN_DPL and ENAA_P1)
+
+    REG_U8 DPL_P2:1;    //Enable dynamic payload length data pipe 2.
+                        //(Requires EN_DPL and ENAA_P2)
+
+    REG_U8 DPL_P3:1;    //Enable dynamic payload length data pipe 3.
+                        //(Requires EN_DPL and ENAA_P3)
+
+    REG_U8 DPL_P4:1;    //Enable dynamic payload length data pipe 4.
+                        //(Requires EN_DPL and ENAA_P4)
+
+    REG_U8 DPL_P5:1;    //Enable dynamic payload length data pipe 5.
+                        //(Requires EN_DPL and ENAA_P5)
+
+    REG_U8 Reserved:2;  //Only '00' allowed
+};
+
+/**** FEATURE		1DH = 0x00
+    Feature Register
+    */
+struct nRF24L01_FEATURE{
+    REG_U8 EN_DYN_ACK:1;        //Enables the W_TX_PAYLOAD_NOACK command
+
+    REG_U8 EN_ACK_PAY:1;        //Enables Payload with ACK
+
+    REG_U8 EN_DPL:1;    //Enables Dynamic Payload Length
+
+    REG_U8 Reserved:5;  //Only '00000' allowed
+};
+
+struct nRF2401_Register{
+    struct nRF24L01_CONFIG      CONFIG;         //00H
+    struct nRF24L01_EN_AA       EN_AA;          //01H
+    struct nRF24L01_EN_RXADDR	EN_RXADDR;      //02H
+    struct nRF24L01_SETUP_AW	SETUP_AW;       //03H
+    struct nRF24L01_SETUP_RETR	SETUP_RETR;     //04H
+    struct nRF24L01_RF_CH       RF_CH;          //05H
+    struct nRF24L01_RF_SETUP	RF_SETUP;       //06H
+    struct nRF24L01_STATUS      STATUS;		//07H
+    struct nRF24L01_OBSERVE_TX	OBSERVE_TX;	//08H
+    struct nRF24L01_RPD         RPD;		//09H
+    struct nRF24L01_RX_ADDR_P0	RX_ADDR_P0;	//0AH
+    struct nRF24L01_RX_ADDR_P1	RX_ADDR_P1;	//0BH
+    struct nRF24L01_RX_ADDR_P2	RX_ADDR_P2;	//0CH
+    struct nRF24L01_RX_ADDR_P3	RX_ADDR_P3;	//0DH
+    struct nRF24L01_RX_ADDR_P4	RX_ADDR_P4;	//0EH
+    struct nRF24L01_RX_ADDR_P5	RX_ADDR_P5;	//0FH
+    struct nRF24L01_TX_ADDR     TX_ADDR;	//10H
+    struct nRF24L01_RX_PW_P0	RX_PW_P0;	//11H
+    struct nRF24L01_RX_PW_P1	RX_PW_P1;	//12H
+    struct nRF24L01_RX_PW_P2	RX_PW_P2;	//13H
+    struct nRF24L01_RX_PW_P3	RX_PW_P3;	//14H
+    struct nRF24L01_RX_PW_P4	RX_PW_P4;	//15H
+    struct nRF24L01_RX_PW_P5	RX_PW_P5;	//16H
+    struct nRF24L01_FIFO_STATUS	FIFO_STATUS;    //17H
+    struct nRF24L01_DYNPD       DYNPD;		//1CH
+    struct nRF24L01_FEATURE     FEATURE;	//1DH
+};
 #endif
-
-#endif // NRF_REG_H__
-/*** End of File **************************************************************/

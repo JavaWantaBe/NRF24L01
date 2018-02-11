@@ -1,191 +1,586 @@
-/*******************************************************************************
-* Title                 :   Nordic nRF24L01+ API
-* Filename              :   nrf.c
-* Author                :   RBL
-* Origin Date           :   11/01/2016
-* Notes                 :   None
-*******************************************************************************/
-/*************** MODULE REVISION LOG ******************************************
-*
-*    Date    Software Version    Initials   Description
-*  11/01/16           .1         RBL        Module Created.
-*
-*******************************************************************************/
-/**
- * @file nrf.c
- * @brief This module contains the
- */
-/******************************************************************************
-* Includes
-*******************************************************************************/
-#include <stdbool.h>
-#include <stddef.h>
-#include <string.h>
 #include "nrf24l01.h"
 
-/******************************************************************************
-* Module Preprocessor Constants
-*******************************************************************************/
-#define NRF_ERROR  -1
-#define NRF_SUCCESS 0
 
-/******************************************************************************
-* Module Preprocessor Macros
-*******************************************************************************/
-
-/******************************************************************************
-* Module Typedefs
-*******************************************************************************/
-
-/******************************************************************************
-* Module Variable Definitions
-*******************************************************************************/
-static volatile bool success_tx;
-static volatile uint32_t timeout;
-static uint8_t tx_address[5];
-static bool ack_enabled;
-
-/******************************************************************************
-* Function Prototypes
-*******************************************************************************/
-
-/******************************************************************************
-* Function Definitions
-*******************************************************************************/
-nrf_status_t nrf24l01_init( nrf_radio_t radio )
+/*** Public function implementation ***/
+NRF_RESULT_t NRF_Init( nrf24l01_dev_t* dev )
 {
-	bool ack = ( radio.mode == NRF_SHOCK_BURST ) ? false : true;
+    uint8_t config = 0;
 
-	nrf_hw_init(radio.mode, radio.primary);
-	nrf_close_pipe( NRF_ALL );
-    nrf_clear_irq_flag( NRF_MAX_RT );     /**< Max retries interrupt */
-    nrf_clear_irq_flag( NRF_TX_DS );      /**< TX data sent interrupt */
-    nrf_clear_irq_flag( NRF_RX_DR );
-    nrf_flush_rx();
-    nrf_flush_tx(); /* Flush FIFOs */
-    
-    /* Set device's addresses */
-	nrf_set_address( NRF_PIPE0, address->p0 );
-	/* Open pipe0, without/autoack */
-	nrf_open_pipe( NRF_PIPE0, false );
+    NRF_SetupGPIO();
+    NRF_PowerUp( dev, true );
 
-	if( address->p1[0] > 0 )
-	{
-		nrf_set_address( NRF_PIPE1, address->p1 );
-		nrf_open_pipe( NRF_PIPE1, ack );
-	}
+    while( ( config & 0x02 ) == 0 )
+        NRF_ReadRegister( NRF_CONFIG, &config );
 
-	if( address->p2[0] > 0 )
-	{
-		nrf_set_address( NRF_PIPE2, address->p2 );
-		nrf_open_pipe( NRF_PIPE2, ack );
-	}
+    NRF_SetRXPayloadWidth_P0( dev, dev->payload_len );
+    NRF_SetRXAddress_P0( dev, dev->rx_address );
+    NRF_SetTXAddress( dev, dev->tx_address );
+    NRF_EnableRXDataReadyIRQ( dev, true );
+    NRF_EnableTXDataSentIRQ( dev, true );
+    NRF_EnableMaxRetransmitIRQ( dev, true );
+    NRF_EnableCRC( dev, true );
+    NRF_SetCRCWidth( dev, dev->crc_width );
+    NRF_SetAddressWidth( dev, dev->addr_width );
+    NRF_SetRFChannel( dev, dev->rf_channel );
+    NRF_SetDataRate( dev, dev->date_rate );
+    NRF_SetRetransmittionCount( dev, dev->retransmit_count );
+    NRF_SetRetransmittionDelay( dev, dev->retransmit_delay );
+    NRF_EnableRXPipe( dev, 0 );
+    NRF_EnableAutoAcknowledgement( dev, false );
+    NRF_ClearInterrupts( dev );
+    NRF_RXTXControl( dev, NRF_STATE_RX );
+    NRF_FlushRX();
 
-	if( address->p3[0] > 0 )
-	{
-		nrf_set_address( NRF_PIPE3, address->p3 );
-		nrf_open_pipe( NRF_PIPE3, ack );
-	}
-
-	if( address->p4[0] > 0 )
-	{
-		nrf_set_address( NRF_PIPE4, address->p4 );
-		nrf_open_pipe( NRF_PIPE4, ack );
-	}
-
-	if( address->p5[0] > 0 )
-	{
-		nrf_set_address( NRF_PIPE5, address->p5 );
-		nrf_open_pipe( NRF_PIPE5, ack );
-	}
-
-	if( radio.mode == NRF_ENHANCED || radio.mode == NRF_ENHANCED_BIDIR )
-		nrf_set_auto_retr( NRF_RETRANSMITS, NRF_RETRANS_DELAY );
-	else
-		nrf_set_auto_retr( 0, NRF_RETRANS_DELAY );
-	if( radio.mode == NRF_ENHANCED_BIDIR )
-	{
-		nrf_enable_ack_pl();        // Enable ack payload
-		nrf_enable_dynamic_pl();    // Enables dynamic payload
-		nrf_setup_dyn_pl( 0x3f );   // Sets up dynamic payload on all data pipes.
-	}
-
-    nrf_set_power_mode( NRF_PWR_UP );
-    nrf_delay( NRF_POWER_UP_DELAY );   // Wait for the radio to
-	if( radio.primary == NRF_PRX )
-		nrf_start_active_rx();
-	else
-		nrf_enter_standby_mode();
-
-}
-
-
-
-
-
-uint8_t nrf_send_data( uint8_t *address, uint8_t *data_out, uint8_t count )
-{
-    uint32_t time_out;
-    
-    count = MIN( count, NRF_PAYLOAD_LENGTH );
-    success_tx = false;
-
-    if( address != NULL && memcmp( address, tx_address, 5 ) )
-        nrf_set_address( NRF_TX, address );
-    else
-        nrf_write_tx_pload( data_out, count );
-    
-    time_out = timeout + 13;
-    
-    if( ack_enabled )
+    if( dev->mode == NRF_SHOCKBURST)
     {
-		while( !success_tx )
-		{
-		   if( timeout > time_out )
-		   {
-			   count = 0;
-			   break;
-		   }
-		}
+
     }
-    return count;
-}
-
-
-uint8_t nrf_recieve_data( nrf_address_t *address, uint8_t *data_in )
-{
-    *address = nrf_get_rx_data_source();
-    nrf_read_rx_pload( data_in );
-
-    return nrf_get_rx_pload_width( *address );
-}
-
-void nrf_acknowledged()
-{
-     success_tx = true;
-}
-
-bool nrf_is_interrupted( nrf_irq_source_t source )
-{
-    uint8_t flags = nrf_get_irq_flags();
-
-    if( flags & ( uint8_t )( 1 << source ) )
+    else if( dev->mode == NRF_ENHANCED)
     {
-        nrf_clear_irq_flag( source );
-        
-        if( source == NRF_MAX_RT )
-            nrf_flush_tx();
-        return true;
+        NRF_EnableAutoAcknowledgement( dev, true );
+    }
+    else if( dev->mode == NRF_ENHANCED_SHOCKBURST)
+    {
+
+    }
+    NRF_SetRXPayloadWidth_P0( dev, dev->payload_len );
+    NRF_SetRXAddress_P0( dev, dev->rx_address );
+    NRF_SetTXAddress( dev, dev->tx_address );
+    NRF_EnableRXDataReadyIRQ( dev, 1 );
+    NRF_EnableTXDataSentIRQ( dev, 1 );
+    NRF_EnableMaxRetransmitIRQ( dev, 1 );
+    NRF_EnableCRC( dev, 1 );
+    NRF_SetCRCWidth( dev, dev->crc_width );
+    NRF_SetAddressWidth( dev, dev->addr_width );
+    NRF_SetRFChannel( dev, dev->rf_channel );
+    NRF_SetDataRate( dev, dev->date_rate );
+    NRF_SetRetransmittionCount( dev, dev->retransmit_count );
+    NRF_SetRetransmittionDelay( dev, dev->retransmit_delay );
+    NRF_EnableRXPipe( dev, 0 );
+    NRF_EnableAutoAcknowledgement( dev, 0 );
+    NRF_ClearInterrupts( dev );
+    NRF_RXTXControl( dev, NRF_STATE_RX );
+    NRF_FlushRX();
+
+    return NRF_OK;
+}
+
+
+void NRF_IRQ_Handler( nrf24l01_dev_t* dev )
+{
+    uint8_t status = 0;
+
+    if( NRF_ReadRegister( NRF_STATUS, &status ) != NRF_OK )
+    {
+        return;
+    }
+
+    if( ( status & ( 1 << 6 ) ) )
+    {  // RX FIFO Interrupt
+        uint8_t fifo_status = 0;
+
+        NRF24L01_CE_LOW();
+        NRF_WriteRegister( NRF_STATUS, &status );
+        NRF_ReadRegister( NRF_FIFO_STATUS, &fifo_status );
+        if( dev->BUSY_FLAG == 1 && ( fifo_status & 1 ) == 0 )
+        {
+            NRF_ReadRXPayload( dev->rx_buffer, dev->payload_len );
+            status |= 1 << 6;
+            NRF_WriteRegister( NRF_STATUS, &status );
+            //NRF_FlushRX(dev);
+            dev->BUSY_FLAG = 0;
+        }
+        NRF24L01_CE_HIGH();
+    }
+
+    if( ( status & ( 1 << 5 ) ) )
+    {  // TX Data Sent Interrupt
+        status |= 1 << 5;  // clear the interrupt flag
+        NRF24L01_CE_LOW();
+        NRF_RXTXControl( dev, NRF_STATE_RX );
+        dev->state = NRF_STATE_RX;
+        NRF24L01_CE_HIGH();
+        NRF_WriteRegister( NRF_STATUS, &status );
+        dev->BUSY_FLAG = 0;
+    }
+
+    if( ( status & ( 1 << 4 ) ) )
+    {  // MaxRetransmits reached
+        status |= 1 << 4;
+
+        NRF_FlushTX( );
+        NRF_PowerUp( dev, 0 );  // power down
+        NRF_PowerUp( dev, 1 );  // power up
+
+        NRF24L01_CE_LOW();
+        NRF_RXTXControl( dev, NRF_STATE_RX );
+        dev->state = NRF_STATE_RX;
+        NRF24L01_CE_HIGH();
+
+        NRF_WriteRegister( NRF_STATUS, &status );
+        dev->BUSY_FLAG = 0;
+    }
+}
+
+NRF_RESULT_t NRF_SetDataRate( nrf24l01_dev_t* dev, NRF_DATA_RATE_t rate )
+{
+    uint8_t reg = 0;
+
+    if( NRF_ReadRegister( NRF_RF_SETUP, &reg ) != NRF_OK )
+        return NRF_ERROR;
+
+    reg &= ~(0x28);
+
+    switch( rate )
+    {
+        case NRF_DATA_RATE_250KBPS:
+            reg |= (1 << 5);
+            break;
+        case NRF_DATA_RATE_1MBPS:
+            break;
+        case NRF_DATA_RATE_2MBPS:
+            reg |= (1 << 3);
+            break;
+    }
+
+    dev->date_rate = rate;
+
+    return NRF_WriteRegister( NRF_RF_SETUP, &reg );
+}
+
+NRF_RESULT_t NRF_SetTXPower( nrf24l01_dev_t* dev, NRF_TX_PWR_t pwr )
+{
+    uint8_t reg = 0;
+
+    if( NRF_ReadRegister( NRF_RF_SETUP, &reg ) != NRF_OK )
+    {
+        return NRF_ERROR;
+    }
+
+    reg &= ~(0x06);
+
+    switch(pwr)
+    {
+        case NRF_TX_PWR_M18dBm:
+            break;
+        case NRF_TX_PWR_M12dBm:
+            reg |= (1 << 1);
+            break;
+        case NRF_TX_PWR_M6dBm:
+            reg |= (1 << 2);
+            break;
+        case NRF_TX_PWR_0dBm:
+            reg |= (1 << 1) | (1 << 2);
+            break;
+    }
+
+    dev->tx_power = pwr;
+
+    return NRF_WriteRegister( NRF_RF_SETUP, &reg );
+}
+
+NRF_RESULT_t NRF_SetCCW( nrf24l01_dev_t* dev, bool activate )
+{
+    uint8_t reg = 0;
+
+    if( NRF_ReadRegister( NRF_RF_SETUP, &reg ) != NRF_OK )
+    {
+        return NRF_ERROR;
+    }
+
+    reg &= ~(1 << 7);
+
+    if( activate )
+        reg |= (1 << 7);
+
+    return NRF_WriteRegister( NRF_RF_SETUP, &reg );
+}
+
+NRF_RESULT_t NRF_ClearInterrupts( nrf24l01_dev_t* dev )
+{
+    uint8_t reg = 0;
+
+    if( NRF_ReadRegister( NRF_STATUS, &reg ) != NRF_OK )
+    {
+        return NRF_ERROR;
+    }
+
+    reg |= (7 << 4);  // setting bits 4,5,6
+
+    return NRF_WriteRegister( NRF_STATUS, &reg );
+}
+
+NRF_RESULT_t NRF_SetRFChannel( nrf24l01_dev_t* dev, uint8_t ch )
+{
+    uint8_t reg = 0;
+    ch &= 0x7F;
+
+    if( NRF_ReadRegister( NRF_RF_CH, &reg ) != NRF_OK )
+    {
+        return NRF_ERROR;
+    }
+
+    reg |= ch;  // setting channel
+    dev->rf_channel = ch;
+
+    return NRF_WriteRegister( NRF_RF_CH, &reg );
+}
+
+NRF_RESULT_t NRF_SetRetransmittionCount( nrf24l01_dev_t* dev, uint8_t count )
+{
+    uint8_t reg = 0;
+    count &= 0x0F;
+
+    if( NRF_ReadRegister( NRF_SETUP_RETR, &reg ) != NRF_OK )
+    {
+        return NRF_ERROR;
+    }
+
+    reg &= 0xF0;   // clearing bits 0,1,2,3
+    reg |= count;  // setting count
+
+    dev->retransmit_count = count;
+
+    return NRF_WriteRegister( NRF_SETUP_RETR, &reg );
+}
+
+NRF_RESULT_t NRF_SetRetransmittionDelay( nrf24l01_dev_t* dev, NRF_RETRANS_DELAY_t delay )
+{
+    uint8_t reg = 0;
+    delay &= 0x0F;
+
+    if( NRF_ReadRegister( NRF_SETUP_RETR, &reg ) != NRF_OK )
+    {
+        return NRF_ERROR;
+    }
+
+    if( dev->payload_len > 18 )
+    {
+        if( delay <= NRF_WAIT_250us )
+        {
+            delay |= (NRF_WAIT_500us << 4);
+        }
+    }
+
+    reg &= 0x0F;        // clearing bits 4,5,6,7
+    reg |= delay << 4;  // setting delay
+    dev->retransmit_delay = delay;
+
+    return NRF_WriteRegister( NRF_SETUP_RETR, &reg );
+}
+
+NRF_RESULT_t NRF_SetAddressWidth( nrf24l01_dev_t* dev, NRF_ADDR_WIDTH_t width )
+{
+    uint8_t reg = 0;
+    width &= 0x03;
+
+    if( NRF_ReadRegister( NRF_SETUP_AW, &reg ) != NRF_OK )
+    {
+        return NRF_ERROR;
+    }
+
+    reg &= ~0x03;  // clearing bits 0,1
+    reg |= width;  // setting delay
+    dev->addr_width = width;
+
+    return NRF_WriteRegister( NRF_SETUP_AW, &reg );
+}
+
+NRF_RESULT_t NRF_EnableRXPipe( nrf24l01_dev_t* dev, uint8_t pipe )
+{
+    uint8_t reg = 0;
+    pipe &= 0x3F;
+
+    if( NRF_ReadRegister( NRF_EN_RXADDR, &reg ) != NRF_OK )
+    {
+        return NRF_ERROR;
+    }
+
+    reg |= (1 << pipe);
+
+    return NRF_WriteRegister( NRF_EN_RXADDR, &reg );
+}
+
+NRF_RESULT_t NRF_EnableAutoAcknowledgement( nrf24l01_dev_t* dev, uint8_t pipe )
+{
+    uint8_t reg = 0;
+    pipe &= 0x3F;
+
+    if( NRF_ReadRegister( NRF_EN_AA, &reg ) != NRF_OK )
+    {
+        return NRF_ERROR;
+    }
+
+    reg |= (1 << pipe);
+
+    return NRF_WriteRegister( NRF_EN_AA, &reg );
+}
+
+NRF_RESULT_t NRF_EnableCRC( nrf24l01_dev_t* dev, bool activate )
+{
+    uint8_t reg = 0;
+
+    if( NRF_ReadRegister( NRF_CONFIG, &reg ) != NRF_OK )
+    {
+        return NRF_ERROR;
+    }
+
+    reg &= ~(1 << 3);
+
+    if( activate )
+    {
+        reg |= (1 << 3);
+    }
+
+    return NRF_WriteRegister( NRF_CONFIG, &reg );
+}
+
+NRF_RESULT_t NRF_SetCRCWidth( nrf24l01_dev_t* dev, NRF_CRC_WIDTH_t width )
+{
+    uint8_t reg = 0;
+
+    if( NRF_ReadRegister( NRF_CONFIG, &reg ) != NRF_OK )
+    {
+        return NRF_ERROR;
+    }
+
+    reg &= ~(1 << 2);
+
+    if( width == NRF_CRC_WIDTH_2B )
+    {
+        reg |= (1 << 2);
+    }
+
+    dev->crc_width = width;
+
+    return NRF_WriteRegister( NRF_CONFIG, &reg );
+}
+
+NRF_RESULT_t NRF_PowerUp( nrf24l01_dev_t* dev, bool powerUp )
+{
+    uint8_t reg = 0;
+
+    if( NRF_ReadRegister( NRF_CONFIG, &reg ) != NRF_OK )
+    {
+        return NRF_ERROR;
+    }
+
+    reg &= ~(1 << 1);
+
+    if( powerUp )
+    {
+        reg |= 1 << 1;
+    }
+
+    return NRF_WriteRegister( NRF_CONFIG, &reg );
+}
+
+NRF_RESULT_t NRF_RXTXControl( nrf24l01_dev_t* dev, NRF_TXRX_STATE_t rx )
+{
+    uint8_t reg = 0;
+
+    if( NRF_ReadRegister( NRF_CONFIG, &reg ) != NRF_OK )
+    {
+        return NRF_ERROR;
+    }
+
+    reg &= ~(1 << 0);
+
+    if( rx == NRF_STATE_RX )
+    {
+        reg |= (1 << 0);
+    }
+
+    return NRF_WriteRegister( NRF_CONFIG, &reg );
+}
+
+NRF_RESULT_t NRF_EnableRXDataReadyIRQ( nrf24l01_dev_t* dev, bool activate )
+{
+    uint8_t reg = 0;
+
+    if( NRF_ReadRegister( NRF_CONFIG, &reg ) != NRF_OK )
+    {
+        return NRF_ERROR;
+    }
+
+    reg &= ~(1 << 6);
+
+    if( !activate )
+    {
+        reg |= (1 << 6);
+    }
+
+    return NRF_WriteRegister( NRF_CONFIG, &reg );
+}
+
+NRF_RESULT_t NRF_EnableTXDataSentIRQ( nrf24l01_dev_t* dev, bool activate )
+{
+    uint8_t reg = 0;
+
+    if( NRF_ReadRegister( NRF_CONFIG, &reg ) != NRF_OK )
+    {
+        return NRF_ERROR;
+    }
+
+    reg &= ~(1 << 5);
+
+    if( !activate )
+    {
+        reg |= 1 << 5;
+    }
+
+    return NRF_WriteRegister( NRF_CONFIG, &reg );
+}
+
+NRF_RESULT_t NRF_EnableMaxRetransmitIRQ( nrf24l01_dev_t* dev, bool activate )
+{
+    uint8_t reg = 0;
+
+    if( NRF_ReadRegister( NRF_CONFIG, &reg ) != NRF_OK )
+    {
+        return NRF_ERROR;
+    }
+
+    reg &= ~(1 << 4);
+
+    if( !activate )
+    {
+        reg |= 1 << 4;
+    }
+
+    return NRF_WriteRegister( NRF_CONFIG, &reg );
+}
+
+NRF_RESULT_t NRF_SetRXAddress_P0( nrf24l01_dev_t* dev, uint8_t* address )
+{
+    uint8_t rx[5];
+
+    dev->rx_address = address;
+
+    return NRF_SendCommand(  NRF_CMD_W_REGISTER | NRF_RX_ADDR_P0, address, rx, 5 );
+}
+
+NRF_RESULT_t NRF_SetTXAddress( nrf24l01_dev_t* dev, uint8_t* address )
+{
+    uint8_t rx[5];
+
+    dev->tx_address = address;
+
+    return NRF_SendCommand(  NRF_CMD_W_REGISTER | NRF_TX_ADDR, address, rx, 5 );
+}
+
+NRF_RESULT_t NRF_SetRXPayloadWidth_P0( nrf24l01_dev_t* dev, uint8_t width )
+{
+    width &= 0x3F;
+
+    if( NRF_WriteRegister( NRF_RX_PW_P0, &width ) != NRF_OK )
+    {
+        dev->payload_len = 0;
+        return NRF_ERROR;
+    }
+
+    dev->payload_len = width;
+    return NRF_OK;
+}
+
+NRF_RESULT_t NRF_SendPacket( nrf24l01_dev_t* dev, uint8_t* data )
+{
+    dev->BUSY_FLAG = 1;
+
+    NRF24L01_CE_LOW();
+    NRF_RXTXControl( dev, NRF_STATE_TX );
+    NRF_WriteTXPayload( data, dev->payload_len );
+    NRF24L01_CE_HIGH();
+
+    while( dev->BUSY_FLAG == 1 ); // wait for end of transmission
+
+    return NRF_OK;
+}
+
+NRF_RESULT_t NRF_ReceivePacket( nrf24l01_dev_t* dev, uint8_t* data )
+{
+    dev->BUSY_FLAG = 1;
+
+    NRF24L01_CE_LOW();
+    NRF_RXTXControl( dev, NRF_STATE_RX );
+    NRF24L01_CE_HIGH();
+
+    while( dev->BUSY_FLAG == 1 );  // wait for reception
+
+    for( int i = 0; i < dev->payload_len; i++ )
+    {
+        data[i] = dev->rx_buffer[i];
+    }
+
+    return NRF_OK;
+}
+
+NRF_RESULT_t NRF_PushPacket( nrf24l01_dev_t* dev, uint8_t* data )
+{
+    if( dev->BUSY_FLAG == 1 )
+    {
+        NRF_FlushTX();
     }
     else
-        return false;
+    {
+        dev->BUSY_FLAG = 1;
+    }
+
+    NRF24L01_CE_LOW();
+    NRF_RXTXControl( dev, NRF_STATE_TX );
+    NRF_WriteTXPayload( data, dev->payload_len );
+    NRF24L01_CE_HIGH();
+
+    return NRF_OK;
 }
 
-void nrf_timer_tick()
+NRF_RESULT_t NRF_PullPacket( nrf24l01_dev_t* dev, uint8_t* data )
 {
-    timeout++;
+    for( int i = 0; i < dev->payload_len; i++ )
+    {
+        data[i] = dev->rx_buffer[i];
+    }
+
+    return NRF_OK;
 }
 
 
+/************************************
+ ***** Test Functions ***************
+ ***********************************/
+// PLL Clock Functions
+void NRF_SetPLLMode( nrf24l01_dev_t* dev, uint8_t pll_mode )
+{
+//    if( pll_mode == NRF_PLL_LOCK )
+//        nrf_write_reg( RF_SETUP,
+//                       ( nrf_hal_read_reg( RF_SETUP ) | ( 1 << PLL_LOCK ) ) );
+//    else
+//        nrf_write_reg( RF_SETUP,
+//                       ( nrf_hal_read_reg( RF_SETUP ) & ~( 1 << PLL_LOCK ) ) );
+}
 
-/*************** END OF FUNCTIONS ***************************************************************************/
+uint8_t NRF_GetPLLMode()
+{
+//    return ( nrf_pll_mode_t )( ( nrf_hal_read_reg( RF_SETUP ) &
+//                                 ( 1 << PLL_LOCK ) ) >> PLL_LOCK );
+    return 1;
+}
+
+// LNA Gain Functions
+void NRF_SetLNAGain( nrf24l01_dev_t* dev, uint8_t lna_gain )
+{
+//    if( lna_gain == NRF_LNA_HCURR )
+//        nrf_write_reg( RF_SETUP,
+//                       ( nrf_hal_read_reg( RF_SETUP ) | ( 1 << LNA_HCURR ) ) );
+//    else
+//        nrf_write_reg( RF_SETUP,
+//                       ( nrf_hal_read_reg( RF_SETUP ) & ~( 1 << LNA_HCURR ) ) );
+}
+
+// Get LNA gain
+uint8_t NRF_GetLNAGain( void )
+{
+//    return ( nrf_lna_mode_t ) ( ( nrf_hal_read_reg( RF_SETUP ) &
+//                                  ( 1 << LNA_HCURR ) ) >> LNA_HCURR );
+    return 1;
+}
