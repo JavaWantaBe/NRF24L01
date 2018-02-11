@@ -18,6 +18,13 @@ typedef enum
 
 typedef enum
 {
+    NRF_PRIMARY_TX,
+    NRF_PRIMARY_RX
+} NRF_PRIMARY_MODE_t;
+
+
+typedef enum
+{
     NRF_DATA_RATE_1MBPS = 0,
     NRF_DATA_RATE_2MBPS = 1,
     NRF_DATA_RATE_250KBPS = 2
@@ -46,8 +53,11 @@ typedef enum
 
 typedef enum
 {
-    NRF_STATE_RX = 1,
-    NRF_STATE_TX = 0
+    NRF_POWER_DOWN = 0,
+    NRF_STANDBY_I,
+    NRF_STANDBY_II,
+    NRF_STATE_RX,
+    NRF_STATE_TX
 } NRF_TXRX_STATE_t;
 
 typedef enum
@@ -73,6 +83,7 @@ typedef enum
 typedef struct
 {
     NRF_RADIO_MODE_t mode;
+    NRF_PRIMARY_MODE_t pri_mode;
     NRF_DATA_RATE_t date_rate;
     NRF_TX_PWR_t tx_power;
     NRF_CRC_WIDTH_t crc_width;
@@ -80,8 +91,11 @@ typedef struct
     uint8_t payload_len : 6;        // PayloadLength   : maximum is 32 Bytes
     uint8_t retransmit_count :4;    // RetransmitCount : can be 0~15 times
     NRF_RETRANS_DELAY_t retransmit_delay;    // RetransmitDelay : 0[250uS]~0x0F(4000us), LSB:250us
+#ifdef NRF_RTOS
 
+#else
     __IO uint8_t BUSY_FLAG;
+#endif
     __IO NRF_TXRX_STATE_t state;
 
     /* Usr interface, Rx/Tx Buffer */
@@ -142,7 +156,7 @@ NRF_RESULT_t NRF_EnableAutoAcknowledgement( nrf24l01_dev_t* dev, uint8_t pipe );
 NRF_RESULT_t NRF_EnableCRC( nrf24l01_dev_t* dev, bool activate );
 NRF_RESULT_t NRF_SetCRCWidth( nrf24l01_dev_t* dev, NRF_CRC_WIDTH_t width );
 NRF_RESULT_t NRF_PowerUp( nrf24l01_dev_t* dev, bool powerUp );
-NRF_RESULT_t NRF_RXTXControl( nrf24l01_dev_t* dev, NRF_TXRX_STATE_t rx );
+NRF_RESULT_t NRF_RXTXControl( nrf24l01_dev_t* dev, NRF_PRIMARY_MODE_t rx );
 NRF_RESULT_t NRF_EnableRXDataReadyIRQ( nrf24l01_dev_t* dev, bool activate );
 NRF_RESULT_t NRF_EnableTXDataSentIRQ( nrf24l01_dev_t* dev, bool activate );
 NRF_RESULT_t NRF_EnableMaxRetransmitIRQ( nrf24l01_dev_t* dev, bool activate );

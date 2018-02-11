@@ -6,34 +6,29 @@ NRF_RESULT_t NRF_Init( nrf24l01_dev_t* dev )
 {
     uint8_t config = 0;
 
+    HAL_Delay(100);
+    dev->state = NRF_POWER_DOWN;
     NRF_SetupGPIO();
     NRF_PowerUp( dev, true );
-
-    while( ( config & 0x02 ) == 0 )
-        NRF_ReadRegister( NRF_CONFIG, &config );
 
     NRF_SetRXPayloadWidth_P0( dev, dev->payload_len );
     NRF_SetRXAddress_P0( dev, dev->rx_address );
     NRF_SetTXAddress( dev, dev->tx_address );
-    NRF_EnableRXDataReadyIRQ( dev, true );
-    NRF_EnableTXDataSentIRQ( dev, true );
-    NRF_EnableMaxRetransmitIRQ( dev, true );
+
     NRF_EnableCRC( dev, true );
     NRF_SetCRCWidth( dev, dev->crc_width );
+
     NRF_SetAddressWidth( dev, dev->addr_width );
     NRF_SetRFChannel( dev, dev->rf_channel );
     NRF_SetDataRate( dev, dev->date_rate );
     NRF_SetRetransmittionCount( dev, dev->retransmit_count );
     NRF_SetRetransmittionDelay( dev, dev->retransmit_delay );
-    NRF_EnableRXPipe( dev, 0 );
-    NRF_EnableAutoAcknowledgement( dev, false );
-    NRF_ClearInterrupts( dev );
-    NRF_RXTXControl( dev, NRF_STATE_RX );
-    NRF_FlushRX();
+
+    NRF_EnableRXPipe( dev, false );
 
     if( dev->mode == NRF_SHOCKBURST)
     {
-
+        NRF_EnableAutoAcknowledgement( dev, false );
     }
     else if( dev->mode == NRF_ENHANCED)
     {
@@ -43,24 +38,16 @@ NRF_RESULT_t NRF_Init( nrf24l01_dev_t* dev )
     {
 
     }
-    NRF_SetRXPayloadWidth_P0( dev, dev->payload_len );
-    NRF_SetRXAddress_P0( dev, dev->rx_address );
-    NRF_SetTXAddress( dev, dev->tx_address );
-    NRF_EnableRXDataReadyIRQ( dev, 1 );
-    NRF_EnableTXDataSentIRQ( dev, 1 );
-    NRF_EnableMaxRetransmitIRQ( dev, 1 );
-    NRF_EnableCRC( dev, 1 );
-    NRF_SetCRCWidth( dev, dev->crc_width );
-    NRF_SetAddressWidth( dev, dev->addr_width );
-    NRF_SetRFChannel( dev, dev->rf_channel );
-    NRF_SetDataRate( dev, dev->date_rate );
-    NRF_SetRetransmittionCount( dev, dev->retransmit_count );
-    NRF_SetRetransmittionDelay( dev, dev->retransmit_delay );
-    NRF_EnableRXPipe( dev, 0 );
-    NRF_EnableAutoAcknowledgement( dev, 0 );
+
     NRF_ClearInterrupts( dev );
-    NRF_RXTXControl( dev, NRF_STATE_RX );
+    NRF_EnableRXDataReadyIRQ( dev, true );
+    NRF_EnableTXDataSentIRQ( dev, true );
+    NRF_EnableMaxRetransmitIRQ( dev, true );
+
     NRF_FlushRX();
+    NRF_FlushTX();
+    NRF_RXTXControl( dev, dev->pri_mode );
+
 
     return NRF_OK;
 }
@@ -359,23 +346,31 @@ NRF_RESULT_t NRF_SetCRCWidth( nrf24l01_dev_t* dev, NRF_CRC_WIDTH_t width )
 NRF_RESULT_t NRF_PowerUp( nrf24l01_dev_t* dev, bool powerUp )
 {
     uint8_t reg = 0;
+    NRF_RESULT_t result;
 
     if( NRF_ReadRegister( NRF_CONFIG, &reg ) != NRF_OK )
     {
         return NRF_ERROR;
     }
 
-    reg &= ~(1 << 1);
-
     if( powerUp )
     {
         reg |= 1 << 1;
+        dev->state = NRF_STANDBY_I;
+        result = NRF_WriteRegister( NRF_CONFIG, &reg );
+        HAL_Delay(5);
+    }
+    else
+    {
+        reg &= ~(1 << 1);
+        dev->state = NRF_POWER_DOWN;
+        result = NRF_WriteRegister( NRF_CONFIG, &reg );
     }
 
-    return NRF_WriteRegister( NRF_CONFIG, &reg );
+    return result;
 }
 
-NRF_RESULT_t NRF_RXTXControl( nrf24l01_dev_t* dev, NRF_TXRX_STATE_t rx )
+NRF_RESULT_t NRF_RXTXControl( nrf24l01_dev_t* dev, NRF_PRIMARY_MODE_t mode )
 {
     uint8_t reg = 0;
 
@@ -384,11 +379,16 @@ NRF_RESULT_t NRF_RXTXControl( nrf24l01_dev_t* dev, NRF_TXRX_STATE_t rx )
         return NRF_ERROR;
     }
 
-    reg &= ~(1 << 0);
-
-    if( rx == NRF_STATE_RX )
+    if( mode == NRF_PRIMARY_RX )
     {
         reg |= (1 << 0);
+        dev->state = NRF_STATE_RX;
+        NRF24L01_CE_HIGH();
+    }
+    else
+    {
+        reg &= ~(1 << 0);
+        dev->state = NRF_STATE_TX;
     }
 
     return NRF_WriteRegister( NRF_CONFIG, &reg );
